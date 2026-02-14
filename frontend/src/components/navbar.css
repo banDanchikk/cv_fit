@@ -1,0 +1,101 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    margin: 0;
+}
+
+.main {
+    width: 100%;
+    padding: 10px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #ffffff;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+}
+
+.title h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.logo {
+    background-color: rgb(37, 96, 245);
+    width: 3em;
+    height: 3em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+}
+
+.logo .image-logo {
+    height: 2.3em;
+    width: auto;
+}
+
+.pages {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.page {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #374151;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.page h2 {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.page:hover {
+    background-color: #eef2ff;
+    color: rgb(37, 96, 245);
+    transform: translateY(-1px);
+}
+
+.page:active {
+    transform: translateY(0);
+}
+
+.image {
+    width: 1.3em;
+    height: 1.3em;
+}
+
+.auth-btn {
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    background-color: rgb(37, 96, 245);
+    color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.auth-btn:hover {
+    background-color: rgb(29, 78, 216);
+    transform: translateY(-1px);
+}

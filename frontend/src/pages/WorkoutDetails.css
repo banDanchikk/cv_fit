@@ -1,0 +1,280 @@
+/* ===============================
+   PAGE
+================================ */
+
+.workout-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.workout-header {
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workout-title {
+  font-size: 34px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.workout-subtitle {
+  color: #777;
+  font-size: 15px;
+}
+
+/* ===============================
+   MAIN LAYOUT
+================================ */
+
+.wk-pg-content {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+/* ===============================
+   EXERCISE LIST
+================================ */
+
+.wk-ex-list {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ===============================
+   EXERCISE CARD
+================================ */
+
+.wk-ex-element {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 18px 16px 22px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wk-ex-element::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 4px;
+  background: #2563eb;
+}
+
+.wk-menu-btn {
+  margin-left: auto;
+}
+
+.wk-ex-element:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* IMAGE */
+
+.wk-ex-element img {
+  width: 110px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #eee;
+}
+
+/* INFO */
+
+.lst-el-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ex-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: 0.2px;
+}
+
+.ex-plans {
+  font-size: 14px;
+  color: #666;
+}
+
+/* ===============================
+   STATS CARD
+================================ */
+
+.wk-stats {
+  flex: 1;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px 24px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 24px;
+}
+
+/* TOP */
+
+.wk-stats-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.wk-author {
+  display: flex;
+  flex-direction: column;
+}
+
+.wk-author .label {
+  font-size: 13px;
+  color: #777;
+}
+
+.wk-author .author {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+}
+
+/* EDIT BUTTON */
+
+.main-btn {
+  padding: 16px 32px;
+  border-radius: 10px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  background: #2563eb;
+  border: none;
+
+  color: #ffffff;
+  font-size: 2em;
+  font-weight: 600;
+  line-height: 1;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease;
+}
+
+.main-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.edit-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+
+  background: transparent;
+  border: 2px solid #2563eb;
+
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+}
+
+.edit-btn:hover {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #ffffff;
+  transform: translateY(-1px);
+}
+
+
+/* CONTENT */
+
+.wk-stats-content {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.wk-summary-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111;
+}
+
+/* GRID */
+
+.wk-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding-bottom: 20px;
+}
+
+.wk-summary-item {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 16px 10px;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wk-summary-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.wk-summary-value {
+  display: block;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.wk-summary-label {
+  font-size: 13px;
+  color: #555;
+}
+
+/* ===============================
+   RESPONSIVE
+================================ */
+
+@media (max-width: 900px) {
+  .wk-pg-content {
+    flex-direction: column;
+  }
+
+  .wk-stats {
+    position: static;
+    width: 100%;
+  }
+
+  .wk-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

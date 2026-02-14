@@ -1,0 +1,46 @@
+.chart {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.muscle-type {
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  align-items: center;
+
+  padding: 0px 12px;
+}
+
+.muscle-name {
+  text-align: left;
+  font-weight: 500;
+}
+
+.bar {
+  height: 14px;
+  background-color: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-inline: 12px;
+}
+
+.bar-stat {
+  height: 100%;
+  background-color: rgb(37, 96, 245);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.percent {
+  text-align: right;
+  font-size: 14px;
+}
+
+.chart-info{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+}

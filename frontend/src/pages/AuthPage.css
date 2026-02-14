@@ -1,0 +1,143 @@
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fb;
+  user-select: none;
+}
+
+.auth-card {
+  width: 420px;
+  background: #fff;
+  padding: 32px 36px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-card h2 {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.google-btn:hover {
+  background: #f3f4f6;
+}
+
+.google-icon {
+  font-size: 20px;
+}
+
+.divider {
+  text-align: center;
+  position: relative;
+  margin: 10px 0;
+}
+
+.divider span {
+  background: #fff;
+  padding: 0 10px;
+  color: #777;
+  font-size: 14px;
+}
+
+.input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-field label {
+  font-size: 14px;
+  color: #555;
+}
+
+.input-field input {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  outline: none;
+}
+
+.input-field input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  color: #777;
+  transition: color 0.2s;
+}
+
+.eye-icon:hover {
+  color: #000;
+}
+
+.main-btn {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.main-btn:hover {
+  background: #1e4ed8;
+}
+
+.link {
+  text-align: center;
+  font-size: 14px;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.switch-text {
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+}
+
+.switch-link {
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 600;
+}

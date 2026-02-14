@@ -1,0 +1,126 @@
+.wk-form {
+  width: 100%;
+  max-width: 640px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wk-form__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.wk-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wk-form__field label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+}
+
+.wk-form__field input,
+.wk-form__field select {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #d0d0d0;
+  outline: none;
+}
+
+.wk-form__field input:focus,
+.wk-form__field select:focus {
+  border-color: rgb(37, 96, 245);
+}
+
+.wk-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+button.primary {
+  padding: 10px 16px;
+  background: rgb(37, 96, 245);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+button.primary:hover {
+  background: rgb(29, 78, 216);
+}
+
+button.secondary {
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.wk-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1em;
+  margin-top: 1em;
+}
+
+.wk-exercise-grid {
+  width: 460px;
+  display: grid;
+  grid-template-columns: repeat(3, 2fr); 
+  gap: 10px;
+  height: 275px;  
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+
+.wk-exercise-card {
+  width: 140px;
+  height: 120px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 0.5em;
+  cursor: pointer;
+  text-align: center;
+  background: #f8fafc;
+}
+
+.wk-exercise-card img {
+  width: auto;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.wk-exercise-card span {
+  display: block;
+  margin-top: 0.4em;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.wk-exercise-card.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.wk-form__filter{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}

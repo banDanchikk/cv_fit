@@ -1,0 +1,94 @@
+.exercise-card {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    width: 20%;
+}
+
+.exercise-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.exercise-media {
+    position: relative;
+    background: #f9fafb;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.exercise-media img {
+    max-height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    filter: grayscale(100%);
+}
+
+.exercise-card:hover .exercise-media img {
+  transform: scale(1.05);
+  filter: grayscale(0%);
+}
+
+.difficulty {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.difficulty.beginner {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.difficulty.intermediate {
+    background-color: #fef3c7;
+    color: #92890e;
+}
+
+.difficulty.advanced {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.exercise-content {
+    padding: 1rem;
+}
+
+.exercise-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.6rem;
+}
+
+.muscles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.muscle-tag {
+    background-color: #eef2ff;
+    color: #3730a3;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 500;
+}
+
+.exercise-media img {
+    width: 200px;
+    height: 200px;
+}
