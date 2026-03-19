@@ -25,9 +25,33 @@ export default function ExerciseDetail() {
     const [modalOpen, setModalOpen] = useState(false)
     const [progres, setProgres] = useState({})
     const [period, setPeriod] = useState('3m')
+    const [socketData, setSocketData] = useState({ counter: 0, image: "" });
 
     // разовий максимум = вага + (1+повтори/30)
     // інша формула = вага/(1.0278-(0.0278*повтори))
+
+    useEffect(() => {
+        let ws;
+        if (modalOpen && exercise) {
+            const exerciseKey = exercise.name.toLowerCase().replace(/\s+/g, '-');
+            ws = new WebSocket(`ws://localhost:8000/video/workout/${exerciseKey}`);
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                setSocketData({
+                    image: `data:image/jpeg;base64,${data.image}`,
+                    counter: data.counter
+                });
+            };
+            ws.onclose = () => {
+                console.log("WebSocket Closed");
+                setSocketData({ counter: 0, image: "" }); 
+            };
+            ws.onerror = (err) => console.error("WS Error:", err);
+        }
+        return () => {
+            if (ws) ws.close();
+        };
+    }, [modalOpen, exercise]);
 
     useEffect(() => {
         const fetchExercise = async () => {
@@ -245,7 +269,11 @@ export default function ExerciseDetail() {
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 title={`${exercise.name} test`}>
-                <img src={`http://localhost:8000/video/${exercise.name.toLowerCase().split(' ').join('-')}`} alt="test_video" style={{ width: "700px", height: 'auto' }} />
+                <img 
+                    src={socketData.image} 
+                    alt="AI Trainer View" 
+                    style={{ width: "100%", borderRadius: '8px' }} 
+                />
             </Modal>
         </div>
     )

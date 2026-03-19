@@ -1,5 +1,7 @@
 import cv2
-from fastapi import APIRouter, HTTPException
+import base64
+import asyncio
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import StreamingResponse
 from ui.overlay import draw_debug_angles
 from ai.pose_detector import PoseDetector
@@ -18,15 +20,18 @@ from exercises.deadlift import Deadlift
 from exercises.pull_ups import PullUps
 from exercises.incline_bench_press import InclineBenchPress
 from exercises.crunches import SitUps
+from exercises.lunges import Lunges
 
 router = APIRouter(prefix="/video", tags=["Video"])
 
 detector = PoseDetector()
 
+active_sessions = {}
+
 EXERCISES = {
     "biceps-curl": BicepsCurl,
     "shoulder-press": ShoulderPress,
-    "triceps-extencion": TricepsExtencion,
+    "triceps-extensions": TricepsExtencion,
     "front-raises": FrontRaises,
     "lateral-raises": LateralRaises,
     "glute-bridge": GluteBridge,
@@ -38,15 +43,27 @@ EXERCISES = {
     "pull-ups": PullUps,
     "incline-bench-press": InclineBenchPress,
     "sit-ups": SitUps,
+    "lunges":Lunges,
 }
 
-def generate_frames(exercise_name: str):
+@router.websocket("/workout/{exercise_name}")
+async def workout_websocket(websocket: WebSocket, exercise_name: str):
+    await websocket.accept()
+    
+    # Ініціалізуємо камеру всередині сокета
     cap = cv2.VideoCapture(0)
-
     if not cap.isOpened():
-        raise RuntimeError("Camera not available")
+        await websocket.close(code=1011) # Помилка сервера
+        return
 
-    exercise = EXERCISES[exercise_name]()
+    # Отримуємо клас вправи
+    exercise_class = EXERCISES.get(exercise_name)
+    if not exercise_class:
+        cap.release()
+        await websocket.close(code=1003) # Неправильні дані
+        return
+        
+    exercise = exercise_class()
 
     try:
         while True:
@@ -54,35 +71,37 @@ def generate_frames(exercise_name: str):
             if not ret:
                 break
 
+            # 1. Обробка кадру
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = detector.process(rgb)
 
+            counter, stage = 0, "up"
             if results.pose_landmarks:
                 landmarks = results.pose_landmarks.landmark
-
                 draw_skeleton(frame, results.pose_landmarks)
-                # draw_debug_angles(frame, landmarks)
-
+                
+                # Рахуємо повтори
                 counter, stage = exercise.process(landmarks)
                 draw_counter(frame, counter, stage)
 
+            # 2. Кодуємо кадр у Base64 (щоб передати текстом через JSON)
             _, buffer = cv2.imencode(".jpg", frame)
+            jpg_as_text = base64.b64encode(buffer).decode("utf-8")
 
-            yield (
-                b"--frame\r\n"
-                b"Content-Type: image/jpeg\r\n\r\n" +
-                buffer.tobytes() +
-                b"\r\n"
-            )
+            # 3. Надсилаємо JSON пакет
+            await websocket.send_json({
+                "image": jpg_as_text,
+                "counter": counter,
+                "stage": stage
+            })
+
+            # FPS Control (приблизно 30 кадрів на секунду)
+            await asyncio.sleep(0.03)
+
+    except WebSocketDisconnect:
+        print(f"Клієнт від'єднався. Фінальний результат: {exercise.counter}")
+    except Exception as e:
+        print(f"Помилка: {e}")
     finally:
+
         cap.release()
-
-@router.get("/{exercise_name}")
-def video_stream(exercise_name: str):
-    if exercise_name not in EXERCISES:
-        raise HTTPException(status_code=404, detail="Exercise not found")
-
-    return StreamingResponse(
-        generate_frames(exercise_name),
-        media_type="multipart/x-mixed-replace; boundary=frame"
-    )

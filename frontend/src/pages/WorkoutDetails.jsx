@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { useNavigate } from 'react-router-dom'
 import Navbar from "../components/Navbar";
 import "./WorkoutDetails.css";
 import WorkoutBarChart from "../components/WorkoutBarChart";
@@ -11,6 +12,7 @@ import { FaPlay } from "react-icons/fa";
 
 export default function WorkoutDetails() {
   const { id } = useParams();
+  const navigate = useNavigate()
 
   const [workout, setWorkout] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -117,7 +119,7 @@ export default function WorkoutDetails() {
       <div className="workout-page">
         <div className="workout-header">
           <h1 className="workout-title">{workout.name}</h1>
-          <button className="main-btn" style={{fontSize:'1.5em'}}><FaPlay style={{marginRight:'1em'}}/> Start Workout</button>
+          <button className="main-btn" style={{fontSize:'1.5em'}} onClick={() => navigate(`/workout-session/${workout.id}`)}><FaPlay style={{marginRight:'1em'}}/> Start Workout</button>
         </div>
 
         <div className="wk-pg-content">
