@@ -95,6 +95,17 @@ export default function WorkoutDetails() {
     setEditingExercise(null)
   }
 
+  const handleStartSession = async () => {
+    const res = await fetch("http://127.0.0.1:8000/workout_sessions/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ workout_id: workout.id })
+    })
+
+    const data = await res.json()
+    navigate(`/workout-session/${data.session_id}`)
+  }
+
   const handleDelete = async (e, exerciseId) => {
     e.stopPropagation()
 
@@ -119,7 +130,7 @@ export default function WorkoutDetails() {
       <div className="workout-page">
         <div className="workout-header">
           <h1 className="workout-title">{workout.name}</h1>
-          <button className="main-btn" style={{fontSize:'1.5em'}} onClick={() => navigate(`/workout-session/${workout.id}`)}><FaPlay style={{marginRight:'1em'}}/> Start Workout</button>
+          <button className="main-btn" style={{ fontSize: '1.5em' }} onClick={handleStartSession}><FaPlay style={{ marginRight: '1em' }} /> Start Workout</button>
         </div>
 
         <div className="wk-pg-content">
@@ -164,7 +175,7 @@ export default function WorkoutDetails() {
                 <span className="author">Danylo</span>
               </div>
 
-              <button className="edit-btn" onClick={() => setEditWorkoutOpen(true)}><MdEdit style={{marginRight:'0.5em'}}/>Edit workout</button>
+              <button className="edit-btn" onClick={() => setEditWorkoutOpen(true)}><MdEdit style={{ marginRight: '0.5em' }} />Edit workout</button>
             </div>
 
             <div className="wk-stats-content">
@@ -184,7 +195,7 @@ export default function WorkoutDetails() {
                 </div>
 
                 <div className="wk-summary-item">
-                  <span className="wk-summary-value">~{workout.exercises.reduce((sum, e) => sum + e.sets, 0)*4}</span>
+                  <span className="wk-summary-value">~{workout.exercises.reduce((sum, e) => sum + e.sets, 0) * 4}</span>
                   <span className="wk-summary-label">Duration (min)</span>
                 </div>
               </div>
