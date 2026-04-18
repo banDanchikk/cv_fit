@@ -4,7 +4,7 @@ from api.exercises import router as exercises_router
 from api.video import router as video_router
 from api.workouts import router as workouts_router
 from api.workout_session import router as sessions_router
-
+from api.auth import router as auth_router
 
 app = FastAPI(title="Workout API")
 
@@ -20,3 +20,4 @@ app.include_router(exercises_router)
 app.include_router(video_router)
 app.include_router(workouts_router)
 app.include_router(sessions_router)
+app.include_router(auth_router)

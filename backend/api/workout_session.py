@@ -107,3 +107,55 @@ def get_previous_session(session_id: int):
     row = mycursor.fetchone()
     columns = [col[0] for col in mycursor.description]
     return dict(zip(columns, row))
+
+
+@router.get("/stats/{user_id}")
+def get_user_stats(user_id: int):
+    mycursor.execute("""
+        SELECT ws.id, ws.started_at, ws.ended_at, w.name,
+               TIMESTAMPDIFF(SECOND, ws.started_at, ws.ended_at) as duration,
+               COUNT(wss.id) as total_sets,
+               SUM(wss.reps) as total_reps
+        FROM workout_sessions ws
+        JOIN workouts w ON ws.workout_id = w.id
+        LEFT JOIN workout_sets wss ON wss.session_id = ws.id
+        WHERE ws.user_id = %s AND ws.ended_at IS NOT NULL
+        GROUP BY ws.id, ws.started_at, ws.ended_at, w.name
+        ORDER BY ws.started_at DESC
+        LIMIT 5
+    """, (user_id,))
+    rows = mycursor.fetchall()
+    cols = [c[0] for c in mycursor.description]
+    recent = [dict(zip(cols, r)) for r in rows]
+
+    mycursor.execute("""
+        SELECT DATE(started_at) as day
+        FROM workout_sessions
+        WHERE user_id = %s AND ended_at IS NOT NULL
+        GROUP BY DATE(started_at)
+    """, (user_id,))
+    days = [str(r[0]) for r in mycursor.fetchall()]
+
+    mycursor.execute("""
+        SELECT 
+            DATE(ws.started_at) as day,
+            TIMESTAMPDIFF(SECOND, ws.started_at, ws.ended_at) as duration,
+            SUM(wss.reps) as total_reps
+        FROM workout_sessions ws
+        LEFT JOIN workout_sets wss ON wss.session_id = ws.id
+        WHERE ws.user_id = %s 
+          AND ws.ended_at IS NOT NULL
+          AND MONTH(ws.started_at) = MONTH(NOW())
+          AND YEAR(ws.started_at) = YEAR(NOW())
+        GROUP BY ws.id, ws.started_at, ws.ended_at
+        ORDER BY ws.started_at
+    """, (user_id,))
+    rows = mycursor.fetchall()
+    cols = [c[0] for c in mycursor.description]
+    chart_data = [dict(zip(cols, r)) for r in rows]
+
+    return {
+        "recent_sessions": recent,
+        "workout_days": days,
+        "chart_data": chart_data
+    }

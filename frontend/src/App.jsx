@@ -5,6 +5,7 @@ import WorkoutDetails from './pages/WorkoutDetails';
 import ExerciseDetail from './pages/ExerciseDetail';
 import WorkoutSession from './pages/WorkoutProces';
 import AuthPage from './pages/AuthPage';
+import UserPage from './pages/UserPage';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 const router = createBrowserRouter([
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
   { path: "/workouts", element: <Workouts /> },
   { path: "/workouts/:id", element: <WorkoutDetails /> },
   { path: "/workout-session/:id", element: <WorkoutSession /> },
+  { path: "/account", element: <UserPage /> },
 ])
 
 function App() {

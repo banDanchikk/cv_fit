@@ -1,0 +1,216 @@
+.user-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2em;
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    gap: 2em;
+    background: #fff;
+    border-radius: 16px;
+    padding: 2em;
+    border: 1px solid #e5e7eb;
+}
+
+.user-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    font-size: 2em;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.user-info h2 { margin: 0 0 4px; font-size: 1.3em; }
+.user-info p  { margin: 0 0 12px; color: #6b7280; font-size: 0.95em; }
+
+.user-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.user-edit-form input {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.95em;
+    outline: none;
+}
+
+.user-edit-form input:focus { border-color: #2563eb; }
+
+.user-edit-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.user-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5em;
+}
+
+.user-section {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5em;
+    border: 1px solid #e5e7eb;
+}
+
+.user-section h3 { margin: 0; font-size: 1em; font-weight: 500; }
+
+.full-width { grid-column: 1 / -1; }
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1em;
+}
+
+/* Календар */
+.cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85em;
+    color: #6b7280;
+}
+
+.cal-nav button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2em;
+    color: #6b7280;
+    padding: 0 4px;
+}
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+}
+
+.cal-weekday {
+    font-size: 0.75em;
+    color: #9ca3af;
+    padding: 4px 0;
+}
+
+.cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    border-radius: 50%;
+    cursor: default;
+    color: #374151;
+}
+
+.cal-day.workout-day {
+    background: #2563eb;
+    color: white;
+    font-weight: 500;
+}
+
+.cal-day.today {
+    border: 2px solid #2563eb;
+    color: #2563eb;
+    font-weight: 500;
+}
+
+.cal-day.today.workout-day {
+    background: #2563eb;
+    color: white;
+    border-color: #1d4ed8;
+}
+
+/* Графік */
+.chart-toggle {
+    display: flex;
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+}
+
+.chart-toggle button {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8em;
+    cursor: pointer;
+    background: transparent;
+    color: #6b7280;
+    transition: all 0.15s;
+}
+
+.chart-toggle button.active {
+    background: white;
+    color: #2563eb;
+    font-weight: 500;
+}
+
+/* Останні тренування */
+.recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.recent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+.recent-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.recent-name { font-weight: 500; font-size: 0.95em; }
+.recent-date { font-size: 0.8em; color: #9ca3af; }
+
+.recent-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85em;
+    color: #6b7280;
+}
+
+.outline-btn {
+    background: transparent;
+    border: 1.5px solid #2563eb;
+    color: #2563eb;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.outline-btn:hover {
+    background: #2563eb;
+    color: white;
+}

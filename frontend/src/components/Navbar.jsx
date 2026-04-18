@@ -1,15 +1,21 @@
-import React, { useState } from 'react'
+import React from 'react'
 import './navbar.css'
 import Logo from '../assets/logo.png'
 import { RiHome2Line } from "react-icons/ri";
 import { CgGym } from "react-icons/cg";
 import { LuNotepadText } from "react-icons/lu";
 import { RiAccountCircleLine } from "react-icons/ri";
-import { NavLink } from 'react-router';
-
+import { NavLink, useNavigate } from 'react-router';
+import { useAuth } from '../AuthContext'
 
 export default function Navbar() {
-    const [isAuth, setIsAuth] = useState(false);
+    const { user, logout } = useAuth()
+    const navigate = useNavigate()
+
+    const handleLogout = () => {
+        logout()
+        navigate('/auth')
+    }
 
     return (
         <div className='main'>
@@ -41,15 +47,19 @@ export default function Navbar() {
                     </div>
                 </NavLink>
 
-                {!isAuth ? (
-                    <div className="auth-btn" onClick={() => setIsAuth(true)}>
-                        Sign in
-                    </div>
+                {!user ? (
+                    <NavLink to='/auth' style={{ textDecoration: 'none' }}>
+                        <div className="auth-btn">Sign in</div>
+                    </NavLink>
                 ) : (
-                    <div className="page">
-                        <RiAccountCircleLine className='image' />
-                        <h2>Account</h2>
-                    </div>
+                    <>
+                        <NavLink to='/account' style={{ textDecoration: 'none' }}>
+                            <div className="page">
+                                <RiAccountCircleLine className='image' />
+                                <h2>Account</h2>
+                            </div>
+                        </NavLink>
+                    </>
                 )}
             </div>
         </div>
