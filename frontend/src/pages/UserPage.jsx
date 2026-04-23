@@ -5,25 +5,45 @@ import {
     Tooltip, ResponsiveContainer
 } from 'recharts';
 import './UserPage.css';
+import Modal from '../components/Modal'
+import { MdEdit } from "react-icons/md"
+import { RiLogoutBoxLine } from "react-icons/ri"
 import { useAuth } from '../AuthContext'
-const navigate = useNavigate()
-
-const USER_ID = 1;
+import { useNavigate } from 'react-router';
 
 export default function UserPage() {
-    const { user, logout } = useAuth()
-    const [user] = useState({ username: 'Danylo', email: 'danylo@gmail.com' })
+    const { user: authUser, logout, login } = useAuth()
     const [editing, setEditing] = useState(false)
-    const [formData, setFormData] = useState({ username: user.username, email: user.email })
+    const [formData, setFormData] = useState({ username: '', email: '' })
     const [stats, setStats] = useState(null)
-    const [chartMode, setChartMode] = useState('duration') 
+    const [chartMode, setChartMode] = useState('duration')
     const [currentDate, setCurrentDate] = useState(new Date())
 
+    const AVATAR_COLORS = [
+        '#2563eb', '#7c3aed', '#db2777', '#ea580c',
+        '#16a34a', '#0891b2', '#9333ea', '#dc2626'
+    ]
+
+    const getUserColor = (username) => {
+        if (!username) return AVATAR_COLORS[0]
+        const index = username.charCodeAt(0) % AVATAR_COLORS.length
+        return AVATAR_COLORS[index]
+    }
+
+    const navigate = useNavigate()
+
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/workout_sessions/stats/${USER_ID}`)
+        if (authUser) {
+            setFormData({ username: authUser.username, email: authUser.email })
+        }
+    }, [authUser])
+
+    useEffect(() => {
+        if (!authUser) return
+        fetch(`http://127.0.0.1:8000/workout_sessions/stats/${authUser.id}`)
             .then(r => r.json())
             .then(setStats)
-    }, [])
+    }, [authUser])
 
     const formatTime = (seconds) => {
         if (!seconds) return '0:00'
@@ -38,7 +58,7 @@ export default function UserPage() {
         })
     }
 
-    // Календар
+
     const getDaysInMonth = (date) => {
         const year = date.getFullYear()
         const month = date.getMonth()
@@ -67,40 +87,51 @@ export default function UserPage() {
         navigate('/auth')
     }
 
+    const handleSave = async () => {
+        const token = localStorage.getItem('token')
+        const res = await fetch('http://127.0.0.1:8000/auth/me', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(formData)
+        })
+
+        if (res.ok) {
+            login(token, { ...authUser, ...formData })
+        }
+        setEditing(false)
+    }
+
     return (
         <>
             <Navbar />
             <div className="user-page">
 
                 <div className="user-card">
-                    <div className="user-avatar">
-                        {formData.username?.[0]?.toUpperCase()}
+                    <div
+                        className="user-avatar"
+                        style={{ background: getUserColor(authUser?.username) }}
+                    >
+                        {authUser?.username?.[0]?.toUpperCase()}
                     </div>
-                    {editing ? (
-                        <div className="user-edit-form">
-                            <input
-                                value={formData.username}
-                                onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
-                                placeholder="Username"
-                            />
-                            <input
-                                value={formData.email}
-                                onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
-                                placeholder="Email"
-                            />
-                            <div className="user-edit-actions">
-                                <button className="main-btn" onClick={() => setEditing(false)}>Save</button>
-                                <button className="outline-btn" onClick={() => setEditing(false)}>Cancel</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="user-info">
-                            <h2>{formData.username}</h2>
-                            <p>{formData.email}</p>
-                            <button className="outline-btn" onClick={() => setEditing(true)}>Edit profile</button>
-                        </div>
-                    )}
-                    <button onClick={handleLogout}>Log Out</button>
+
+                    <div className="user-info">
+                        <h2>{authUser?.username}</h2>
+                        <p>{authUser?.email}</p>
+                    </div>
+
+                    <div className="user-card-actions">
+                        <button className="outline-btn" onClick={() => setEditing(true)}>
+                            <MdEdit style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                            Edit profile
+                        </button>
+                        <button className="logout-btn" onClick={handleLogout}>
+                            <RiLogoutBoxLine style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                            Log out
+                        </button>
+                    </div>
                 </div>
 
                 <div className="user-content">
@@ -192,6 +223,30 @@ export default function UserPage() {
 
                 </div>
             </div>
+            <Modal isOpen={editing} onClose={() => setEditing(false)} title="Edit profile">
+                <div className="user-edit-form">
+                    <div className="input-field">
+                        <label>Username</label>
+                        <input
+                            value={formData.username}
+                            onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
+                            placeholder="Username"
+                        />
+                    </div>
+                    <div className="input-field">
+                        <label>Email</label>
+                        <input
+                            value={formData.email}
+                            onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                            placeholder="Email"
+                        />
+                    </div>
+                    <div className="user-edit-actions">
+                        <button className="main-btn" onClick={handleSave}>Save</button>
+                        <button className="outline-btn" onClick={() => setEditing(false)} style={{ marginTop: '8px', fontWeight: 'bold' }}>Cancel</button>
+                    </div>
+                </div>
+            </Modal>
         </>
     )
 }

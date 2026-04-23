@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Body, HTTPException
-from mySQL_connect import mycursor, mydb
+from mySQL_connect import get_cursor
 from pydantic import BaseModel
 from typing import List
 import logging
@@ -35,6 +35,7 @@ class WorkoutExerciseUpdate(BaseModel):
 
 @router.get("/")
 def get_workouts():
+        mycursor, mydb = get_cursor()
         mycursor.execute("SELECT * FROM workouts ORDER BY created_at DESC")
         rows = mycursor.fetchall()
         columns = [col[0] for col in mycursor.description]
@@ -61,6 +62,7 @@ def get_workouts():
 
 @router.get("/{workout_id}")
 def get_workout(workout_id: int):
+        mycursor, mydb = get_cursor()
         mycursor.execute("SELECT * FROM workouts WHERE id = %s", (workout_id,))
         row = mycursor.fetchone()
         
@@ -90,6 +92,7 @@ def get_workout(workout_id: int):
 
 @router.post("/")
 def create_workout(workout: WorkoutCreate):
+        mycursor, mydb = get_cursor()
         mycursor.execute("START TRANSACTION")
         
         query = """
@@ -124,6 +127,7 @@ def create_workout(workout: WorkoutCreate):
 
 @router.put("/{workout_id}")
 def update_workout(workout_id: int, workout: WorkoutUpdate):
+        mycursor, mydb = get_cursor()
         mycursor.execute("SELECT id FROM workouts WHERE id = %s", (workout_id,))
         if not mycursor.fetchone():
             raise HTTPException(status_code=404, detail="Workout not found")
@@ -164,6 +168,7 @@ def update_workout(workout_id: int, workout: WorkoutUpdate):
 
 @router.delete("/{workout_id}")
 def delete_workout(workout_id: int):
+        mycursor, mydb = get_cursor()
         mycursor.execute("START TRANSACTION")
         
         delete_exercises_query = "DELETE FROM workout_exercises WHERE workout_id = %s"
@@ -187,6 +192,7 @@ def update_workout_exercise(
     exercise_id: int,
     data: WorkoutExerciseUpdate
 ):
+    mycursor, mydb = get_cursor()
     query = """
         UPDATE workout_exercises
         SET sets = %s, reps = %s

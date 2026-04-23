@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from mySQL_connect import mycursor, mydb
+from mySQL_connect import get_cursor
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import bcrypt
@@ -21,6 +21,10 @@ class LoginData(BaseModel):
     email: str
     password: str
 
+class UserUpdate(BaseModel):
+    username: str
+    email: str
+
 def create_token(user_id: int, username: str):
     payload = {
         "user_id": user_id,
@@ -40,6 +44,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
 @router.post("/register")
 def register(data: RegisterData):
+    mycursor, mydb = get_cursor()
     mycursor.execute("SELECT id FROM users WHERE email = %s", (data.email,))
     if mycursor.fetchone():
         raise HTTPException(status_code=400, detail="Email already in use")
@@ -58,6 +63,7 @@ def register(data: RegisterData):
 
 @router.post("/login")
 def login(data: LoginData):
+    mycursor, mydb = get_cursor()
     mycursor.execute(
         "SELECT id, username, password_hash FROM users WHERE email = %s",
         (data.email,)
@@ -76,6 +82,7 @@ def login(data: LoginData):
 
 @router.get("/me")
 def get_me(user=Depends(get_current_user)):
+    mycursor, mydb = get_cursor()
     mycursor.execute(
         "SELECT id, username, email FROM users WHERE id = %s",
         (user["user_id"],)
@@ -85,3 +92,12 @@ def get_me(user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="User not found")
     cols = [c[0] for c in mycursor.description]
     return dict(zip(cols, row))
+
+@router.put("/me")
+def update_me(data: UserUpdate, user=Depends(get_current_user)):
+    mycursor, mydb = get_cursor()
+    mycursor.execute(
+        "UPDATE users SET username = %s, email = %s WHERE id = %s",
+        (data.username, data.email, user["user_id"])
+    )
+    return {"username": data.username, "email": data.email}

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
 from mySQL_connect import get_db
+from mySQL_connect import get_cursor
 
 router = APIRouter(
     prefix="/exercises",

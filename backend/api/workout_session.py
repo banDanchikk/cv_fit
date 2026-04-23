@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from mySQL_connect import mycursor, mydb
+from mySQL_connect import get_cursor
 from pydantic import BaseModel
 from typing import List
 
@@ -22,6 +22,7 @@ class SessionFinish(BaseModel):
 
 @router.post("/")
 def create_session(session: SessionCreate):
+    mycursor, mydb = get_cursor()
     mycursor.execute("SELECT id FROM workouts WHERE id = %s", (session.workout_id,))
     if not mycursor.fetchone():
         raise HTTPException(status_code=404, detail="Workout not found")
@@ -36,6 +37,7 @@ def create_session(session: SessionCreate):
 
 @router.post("/{session_id}/finish")
 def finish_session(session_id: int, data: SessionFinish):
+    mycursor, mydb = get_cursor()
     mycursor.execute("SELECT id FROM workout_sessions WHERE id = %s", (session_id,))
     if not mycursor.fetchone():
         raise HTTPException(status_code=404, detail="Session not found")
@@ -57,6 +59,7 @@ def finish_session(session_id: int, data: SessionFinish):
 
 @router.get("/{session_id}")
 def get_session(session_id: int):
+    mycursor, mydb = get_cursor()
     mycursor.execute("SELECT * FROM workout_sessions WHERE id = %s", (session_id,))
     row = mycursor.fetchone()
     if not row:
@@ -66,6 +69,7 @@ def get_session(session_id: int):
 
 @router.delete("/{session_id}")
 def delete_session(session_id: int):
+    mycursor, mydb = get_cursor()
     mycursor.execute("DELETE FROM workout_sets WHERE session_id = %s", (session_id,))
     mycursor.execute("DELETE FROM workout_sessions WHERE id = %s", (session_id,))
     mydb.commit()
@@ -73,6 +77,7 @@ def delete_session(session_id: int):
 
 @router.get("/{session_id}/previous")
 def get_previous_session(session_id: int):
+    mycursor, mydb = get_cursor()
     mycursor.execute("SELECT workout_id FROM workout_sessions WHERE id = %s", (session_id,))
     row = mycursor.fetchone()
     if not row:
@@ -111,6 +116,7 @@ def get_previous_session(session_id: int):
 
 @router.get("/stats/{user_id}")
 def get_user_stats(user_id: int):
+    mycursor, mydb = get_cursor()
     mycursor.execute("""
         SELECT ws.id, ws.started_at, ws.ended_at, w.name,
                TIMESTAMPDIFF(SECOND, ws.started_at, ws.ended_at) as duration,
