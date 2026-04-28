@@ -15,6 +15,8 @@ import Modal from '../components/Modal';
 export default function ExerciseDetail() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const token = localStorage.getItem('token')
+
 
     const [exercise, setExercise] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -44,7 +46,7 @@ export default function ExerciseDetail() {
             };
             ws.onclose = () => {
                 console.log("WebSocket Closed");
-                setSocketData({ counter: 0, image: "" }); 
+                setSocketData({ counter: 0, image: "" });
             };
             ws.onerror = (err) => console.error("WS Error:", err);
         }
@@ -74,20 +76,28 @@ export default function ExerciseDetail() {
     }, [id])
 
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/exercises/${id}/stats`)
+        fetch(`http://127.0.0.1:8000/exercises/${id}/stats`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
             .then(res => res.json())
             .then(data => setStats(
                 [...data.stats].sort(
                     (a, b) => new Date(a.date) - new Date(b.date)
                 )
             ))
-    }, [id])
+    }, [id, token])
 
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/exercises/stats/${id}`)
+        fetch(`http://127.0.0.1:8000/exercises/stats/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
             .then(res => res.json())
             .then(data => setProgres(data))
-    }, [id])
+    }, [id, token])
 
     function formatDate(iso) {
         if (!iso) return '—'
@@ -269,10 +279,10 @@ export default function ExerciseDetail() {
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 title={`${exercise.name} test`}>
-                <img 
-                    src={socketData.image} 
-                    alt="AI Trainer View" 
-                    style={{ width: "100%", borderRadius: '8px' }} 
+                <img
+                    src={socketData.image}
+                    alt="AI Trainer View"
+                    style={{ width: "100%", borderRadius: '8px' }}
                 />
             </Modal>
         </div>

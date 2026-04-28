@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Depends
 from mySQL_connect import get_cursor
+from mySQL_connect import get_db
 from pydantic import BaseModel
 from typing import List
 import logging
+from api.auth import get_current_user
 
 router = APIRouter(
     prefix="/workouts",
@@ -34,174 +36,145 @@ class WorkoutExerciseUpdate(BaseModel):
     reps: int
 
 @router.get("/")
-def get_workouts():
-        mycursor, mydb = get_cursor()
-        mycursor.execute("SELECT * FROM workouts ORDER BY created_at DESC")
-        rows = mycursor.fetchall()
-        columns = [col[0] for col in mycursor.description]
-        workouts = [dict(zip(columns, row)) for row in rows]
-        
+def get_workouts(user=Depends(get_current_user)):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT * FROM workouts 
+            WHERE user_id = %s 
+            ORDER BY created_at DESC
+        """, (user["user_id"],))
+        workouts = cursor.fetchall()
+
         for workout in workouts:
-            mycursor.execute("""
-                SELECT e.id, e.name, e.level, e.muscles, e.gif_url, 
+            cursor.execute("""
+                SELECT e.id, e.name, e.level, e.muscles, e.gif_url,
                        we.sets, we.reps, we.created_at
                 FROM workout_exercises we
                 JOIN exercises e ON we.exercise_id = e.id
                 WHERE we.workout_id = %s
                 ORDER BY we.created_at
             """, (workout['id'],))
-            
-            exercise_rows = mycursor.fetchall()
-            exercise_columns = [col[0] for col in mycursor.description]
-            workout['exercises'] = [
-                dict(zip(exercise_columns, row)) 
-                for row in exercise_rows
-            ]
-        
+            workout['exercises'] = cursor.fetchall()
+
         return workouts
+    finally:
+        cursor.close()
+        conn.close()
 
 @router.get("/{workout_id}")
-def get_workout(workout_id: int):
-        mycursor, mydb = get_cursor()
-        mycursor.execute("SELECT * FROM workouts WHERE id = %s", (workout_id,))
-        row = mycursor.fetchone()
-        
-        if not row:
+def get_workout(workout_id: int, user=Depends(get_current_user)):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT * FROM workouts WHERE id = %s AND user_id = %s",
+            (workout_id, user["user_id"])
+        )
+        workout = cursor.fetchone()
+        if not workout:
             raise HTTPException(status_code=404, detail="Workout not found")
-        
-        columns = [col[0] for col in mycursor.description]
-        workout = dict(zip(columns, row))
-        
-        mycursor.execute("""
-            SELECT e.id, e.name, e.level, e.muscles, e.gif_url, 
+
+        cursor.execute("""
+            SELECT e.id, e.name, e.level, e.muscles, e.gif_url,
                    we.sets, we.reps, we.created_at
             FROM workout_exercises we
             JOIN exercises e ON we.exercise_id = e.id
             WHERE we.workout_id = %s
             ORDER BY we.created_at
         """, (workout_id,))
-        
-        exercise_rows = mycursor.fetchall()
-        exercise_columns = [col[0] for col in mycursor.description]
-        workout['exercises'] = [
-            dict(zip(exercise_columns, row)) 
-            for row in exercise_rows
-        ]
-        
+        workout['exercises'] = cursor.fetchall()
+
         return workout
+    finally:
+        cursor.close()
+        conn.close()
 
 @router.post("/")
-def create_workout(workout: WorkoutCreate):
-        mycursor, mydb = get_cursor()
-        mycursor.execute("START TRANSACTION")
-        
-        query = """
-            INSERT INTO workouts (name, level)
-            VALUES (%s, %s)
-        """
-        mycursor.execute(query, (workout.name, workout.level))
-        workout_id = mycursor.lastrowid
-        
+def create_workout(workout: WorkoutCreate, user=Depends(get_current_user)):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "INSERT INTO workouts (name, level, user_id) VALUES (%s, %s, %s)",
+            (workout.name, workout.level, user["user_id"])
+        )
+        workout_id = cursor.lastrowid
+
         if workout.exercises:
-            exercise_query = """
-                INSERT INTO workout_exercises (workout_id, exercise_id, sets, reps)
-                VALUES (%s, %s, %s, %s)
-            """
-            
-            exercise_values = [
-                (workout_id, ex.exercise_id, ex.sets, ex.reps)
-                for ex in workout.exercises
-            ]
-            
-            mycursor.executemany(exercise_query, exercise_values)
-        
-        mydb.commit()
-        
-        return {
-            "id": workout_id,
-            "name": workout.name,
-            "level": workout.level,
-            "message": "Workout created successfully"
-        }
+            cursor.executemany(
+                "INSERT INTO workout_exercises (workout_id, exercise_id, sets, reps) VALUES (%s, %s, %s, %s)",
+                [(workout_id, ex.exercise_id, ex.sets, ex.reps) for ex in workout.exercises]
+            )
+
+        conn.commit()
+        return {"id": workout_id, "name": workout.name, "level": workout.level}
+    finally:
+        cursor.close()
+        conn.close()
         
 
 @router.put("/{workout_id}")
-def update_workout(workout_id: int, workout: WorkoutUpdate):
-        mycursor, mydb = get_cursor()
-        mycursor.execute("SELECT id FROM workouts WHERE id = %s", (workout_id,))
-        if not mycursor.fetchone():
+def update_workout(workout_id: int, workout: WorkoutUpdate, user=Depends(get_current_user)):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT id FROM workouts WHERE id = %s AND user_id = %s",
+            (workout_id, user["user_id"])
+        )
+        if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Workout not found")
-        
-        mycursor.execute("START TRANSACTION")
-        
-        update_query = """
-            UPDATE workouts
-            SET name = %s, level = %s
-            WHERE id = %s
-        """
-        mycursor.execute(update_query, (workout.name, workout.level, workout_id))
-        
-        delete_query = "DELETE FROM workout_exercises WHERE workout_id = %s"
-        mycursor.execute(delete_query, (workout_id,))
-        
+
+        cursor.execute(
+            "UPDATE workouts SET name = %s, level = %s WHERE id = %s",
+            (workout.name, workout.level, workout_id)
+        )
+        cursor.execute("DELETE FROM workout_exercises WHERE workout_id = %s", (workout_id,))
+
         if workout.exercises:
-            exercise_query = """
-                INSERT INTO workout_exercises (workout_id, exercise_id, sets, reps)
-                VALUES (%s, %s, %s, %s)
-            """
-            
-            exercise_values = [
-                (workout_id, ex.exercise_id, ex.sets, ex.reps)
-                for ex in workout.exercises
-            ]
-            
-            mycursor.executemany(exercise_query, exercise_values)
-        
-        mydb.commit()
-        
-        return {
-            "id": workout_id,
-            "name": workout.name,
-            "level": workout.level,
-            "message": "Workout updated successfully"
-        }
+            cursor.executemany(
+                "INSERT INTO workout_exercises (workout_id, exercise_id, sets, reps) VALUES (%s, %s, %s, %s)",
+                [(workout_id, ex.exercise_id, ex.sets, ex.reps) for ex in workout.exercises]
+            )
+
+        conn.commit()
+        return {"id": workout_id, "name": workout.name, "level": workout.level}
+    finally:
+        cursor.close()
+        conn.close()
 
 @router.delete("/{workout_id}")
-def delete_workout(workout_id: int):
-        mycursor, mydb = get_cursor()
-        mycursor.execute("START TRANSACTION")
-        
-        delete_exercises_query = "DELETE FROM workout_exercises WHERE workout_id = %s"
-        mycursor.execute(delete_exercises_query, (workout_id,))
-        
-        delete_workout_query = "DELETE FROM workouts WHERE id = %s"
-        mycursor.execute(delete_workout_query, (workout_id,))
-        
-        rows_affected = mycursor.rowcount
-        
-        if rows_affected == 0:
+def delete_workout(workout_id: int, user=Depends(get_current_user)):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute("DELETE FROM workout_exercises WHERE workout_id = %s", (workout_id,))
+        cursor.execute(
+            "DELETE FROM workouts WHERE id = %s AND user_id = %s",
+            (workout_id, user["user_id"])
+        )
+        if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Workout not found")
-        
-        mydb.commit()
-        
+
+        conn.commit()
         return {"message": "Workout deleted successfully"}
+    finally:
+        cursor.close()
+        conn.close()
 
 @router.put("/{workout_id}/exercises/{exercise_id}")
-def update_workout_exercise(
-    workout_id: int,
-    exercise_id: int,
-    data: WorkoutExerciseUpdate
-):
-    mycursor, mydb = get_cursor()
-    query = """
-        UPDATE workout_exercises
-        SET sets = %s, reps = %s
-        WHERE workout_id = %s AND exercise_id = %s
-    """
-    mycursor.execute(
-        query,
-        (data.sets, data.reps, workout_id, exercise_id)
-    )
-    mydb.commit()
-
-    return {"status": "updated"}
+def update_workout_exercise(workout_id: int, exercise_id: int, data: WorkoutExerciseUpdate, user=Depends(get_current_user)):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "UPDATE workout_exercises SET sets = %s, reps = %s WHERE workout_id = %s AND exercise_id = %s",
+            (data.sets, data.reps, workout_id, exercise_id)
+        )
+        conn.commit()
+        return {"status": "updated"}
+    finally:
+        cursor.close()
+        conn.close()

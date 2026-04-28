@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Exercises() {
   const navigate = useNavigate()
+  const token = localStorage.getItem('token')
 
   const [exercises, setExercises] = useState([])
   const [searchQuery, setSearchQuery] = useState('')

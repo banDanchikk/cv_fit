@@ -13,6 +13,7 @@ import { FaPlay } from "react-icons/fa";
 export default function WorkoutDetails() {
   const { id } = useParams();
   const navigate = useNavigate()
+  const token = localStorage.getItem('token')
 
   const [workout, setWorkout] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +28,9 @@ export default function WorkoutDetails() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://127.0.0.1:8000/workouts/${id}`);
+        const response = await fetch(`http://127.0.0.1:8000/workouts/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
         if (!response.ok) {
           throw new Error("Failed to fetch workout");
@@ -76,7 +79,8 @@ export default function WorkoutDetails() {
       {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(exData)
       }
@@ -98,8 +102,8 @@ export default function WorkoutDetails() {
   const handleStartSession = async () => {
     const res = await fetch("http://127.0.0.1:8000/workout_sessions/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workout_id: workout.id })
+      headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ workout_id: workout.id, started_at: new Date().toISOString() })
     })
 
     const data = await res.json()
@@ -255,11 +259,13 @@ export default function WorkoutDetails() {
           onSubmit={async (data) => {
             await fetch(`http://127.0.0.1:8000/workouts/${workout.id}`, {
               method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
               body: JSON.stringify(data)
             })
 
-            const res = await fetch(`http://127.0.0.1:8000/workouts/${workout.id}`)
+            const res = await fetch(`http://127.0.0.1:8000/workouts/${workout.id}`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
             const updatedWorkout = await res.json()
 
             setWorkout(updatedWorkout)

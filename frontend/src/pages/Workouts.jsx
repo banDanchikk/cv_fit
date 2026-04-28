@@ -8,6 +8,7 @@ import WorkoutForm from '../components/WorkoutForm'
 
 export default function Workouts() {
   const navigate = useNavigate()
+  const token = localStorage.getItem('token')
 
   const [workouts, setWorkouts] = useState([])
   const [openMenuId, setOpenMenuId] = useState(null)
@@ -16,7 +17,9 @@ export default function Workouts() {
 
   const fetchWorkouts = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/workouts')
+      const response = await fetch('http://127.0.0.1:8000/workouts', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
       if (!response.ok) throw new Error('Fetch failed')
       const data = await response.json()
       setWorkouts(data)
@@ -25,7 +28,7 @@ export default function Workouts() {
     }
   }
 
-  
+
 
   useEffect(() => {
     fetchWorkouts()
@@ -58,7 +61,8 @@ export default function Workouts() {
     e.stopPropagation()
 
     await fetch(`http://127.0.0.1:8000/workouts/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
     })
 
     setWorkouts(prev => prev.filter(w => w.id !== id))
@@ -69,7 +73,7 @@ export default function Workouts() {
     if (editingWorkout) {
       await fetch(`http://127.0.0.1:8000/workouts/${editingWorkout.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(data)
       })
     } else {
@@ -81,7 +85,8 @@ export default function Workouts() {
       await fetch('http://127.0.0.1:8000/workouts', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(data)
       })
@@ -119,7 +124,7 @@ export default function Workouts() {
                 <div className="wk-info">
                   <h3>{w.name}</h3>
                   <span className="wk-meta">
-                    {w.exercises.length} exercises • ~{w.exercises.reduce((sum, e) => sum + e.sets, 0)*4} min
+                    {w.exercises.length} exercises • ~{w.exercises.reduce((sum, e) => sum + e.sets, 0) * 4} min
                   </span>
                 </div>
 

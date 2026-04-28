@@ -13,6 +13,8 @@ import Confetti from 'react-confetti'
 
 export default function WorkoutSession() {
     const navigate = useNavigate()
+    const token = localStorage.getItem('token')
+
     const { id: sessionId } = useParams();
     const [workoutId, setWorkoutId] = useState(null);
     const [workout, setWorkout] = useState(null);
@@ -131,11 +133,15 @@ export default function WorkoutSession() {
 
     useEffect(() => {
         const fetchSession = async () => {
-            const res = await fetch(`http://127.0.0.1:8000/workout_sessions/${sessionId}`);
+            const res = await fetch(`http://127.0.0.1:8000/workout_sessions/${sessionId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const session = await res.json();
             setWorkoutId(session.workout_id);
 
-            const wRes = await fetch(`http://127.0.0.1:8000/workouts/${session.workout_id}`);
+            const wRes = await fetch(`http://127.0.0.1:8000/workouts/${session.workout_id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const wData = await wRes.json();
             setWorkout(wData);
         };
@@ -222,11 +228,13 @@ export default function WorkoutSession() {
 
         await fetch(`http://127.0.0.1:8000/workout_sessions/${sessionId}/finish`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ sets, ended_at: new Date().toISOString() })
         });
 
-        const prevRes = await fetch(`http://127.0.0.1:8000/workout_sessions/${sessionId}/previous`)
+        const prevRes = await fetch(`http://127.0.0.1:8000/workout_sessions/${sessionId}/previous`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
         if (prevRes.ok) {
             const prevData = await prevRes.json()
             setPrevStats(prevData)
@@ -474,7 +482,8 @@ export default function WorkoutSession() {
                             style={{ padding: '0.6em 1.5em', fontSize: '1em', marginTop: '8px' }}
                             onClick={async () => {
                                 await fetch(`http://127.0.0.1:8000/workout_sessions/${sessionId}`, {
-                                    method: "DELETE"
+                                    method: "DELETE",
+                                    headers: { 'Authorization': `Bearer ${token}` }
                                 });
                                 clearSession()
                                 setLeaveModalOpen(false)

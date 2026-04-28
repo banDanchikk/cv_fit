@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 from mySQL_connect import get_db
 from mySQL_connect import get_cursor
+from api.auth import get_current_user
 
 router = APIRouter(
     prefix="/exercises",
@@ -37,13 +38,13 @@ def get_exercise_by_id(exercise_id: int):
         conn.close()
 
 @router.get("/stats/{exercise_id}")
-def get_exercise_progress(exercise_id: int):
+def get_exercise_progress(exercise_id: int, user=Depends(get_current_user)):
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
     try:
         cursor.execute(
-            "SELECT * FROM exercise_progress WHERE exercise_id = %s",
-            (exercise_id,)
+            "SELECT * FROM exercise_progress WHERE exercise_id = %s AND user_id = %s",
+            (exercise_id, user["user_id"])
         )
         return cursor.fetchone()
     finally:
@@ -51,28 +52,25 @@ def get_exercise_progress(exercise_id: int):
         conn.close()
 
 @router.get("/{exercise_id}/stats")
-def get_exercise_training_stats(exercise_id: int):
+def get_exercise_training_stats(exercise_id: int, user=Depends(get_current_user)):
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
     try:
-        query = """
+        cursor.execute("""
             SELECT 
                 DATE(wsess.started_at) as date,
                 MAX(ws.weight) as max_weight,
                 SUM(ws.weight * ws.reps) as volume
             FROM workout_sets ws
             JOIN workout_sessions wsess ON ws.session_id = wsess.id
-            WHERE ws.exercise_id = %s
+            WHERE ws.exercise_id = %s AND wsess.user_id = %s
             GROUP BY DATE(wsess.started_at)
             ORDER BY date ASC
-        """
-
-        cursor.execute(query, (exercise_id,))
-        stats = cursor.fetchall()
+        """, (exercise_id, user["user_id"]))
 
         return {
             "exercise_id": exercise_id,
-            "stats": stats
+            "stats": cursor.fetchall()
         }
     finally:
         cursor.close()

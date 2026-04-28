@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router';
 
 export default function UserPage() {
     const { user: authUser, logout, login } = useAuth()
+    const token = localStorage.getItem('token')
     const [editing, setEditing] = useState(false)
     const [formData, setFormData] = useState({ username: '', email: '' })
     const [stats, setStats] = useState(null)
@@ -40,7 +41,9 @@ export default function UserPage() {
 
     useEffect(() => {
         if (!authUser) return
-        fetch(`http://127.0.0.1:8000/workout_sessions/stats/${authUser.id}`)
+        fetch(`http://127.0.0.1:8000/workout_sessions/stats/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
             .then(r => r.json())
             .then(setStats)
     }, [authUser])
