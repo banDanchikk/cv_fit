@@ -4,6 +4,7 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa"
 import { FcGoogle } from "react-icons/fc"
 import { useAuth } from '../AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { signInWithGoogle } from '../firebase'
 
 export default function AuthPage() {
   const navigate = useNavigate()
@@ -18,6 +19,27 @@ export default function AuthPage() {
   const [formData, setFormData] = useState({
     username: '', email: '', password: '', repeatPassword: ''
   })
+
+  const handleGoogleLogin = async () => {
+    try {
+      const firebaseUser = await signInWithGoogle()
+      const idToken = await firebaseUser.getIdToken()
+
+      const res = await fetch('http://127.0.0.1:8000/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken })
+      })
+
+      const data = await res.json()
+      if (!res.ok) { setError(data.detail); return }
+
+      login(data.token, { id: data.user_id, username: data.username })
+      navigate('/')
+    } catch (err) {
+      setError('Google login failed')
+    }
+  }
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -67,10 +89,10 @@ export default function AuthPage() {
       <div className="auth-card">
         <h2>{mode === 'login' ? 'Log In' : 'Sign Up'}</h2>
 
-        <button className="google-btn">
-          <FcGoogle className="google-icon" />
+        {/* <button className="google-btn">
+          <FcGoogle className="google-icon" onClick={handleGoogleLogin} />
           Continue with Google
-        </button>
+        </button> */}
 
         {mode === 'register' && (
           <div className="input-field">

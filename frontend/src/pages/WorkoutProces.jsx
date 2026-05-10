@@ -126,6 +126,7 @@ export default function WorkoutSession() {
     useEffect(() => {
         if (socketData.counter > 0) {
             setIsGlowing(true);
+            speak(socketData.counter)
             const timer = setTimeout(() => setIsGlowing(false), 500);
             return () => clearTimeout(timer);
         }
@@ -137,6 +138,12 @@ export default function WorkoutSession() {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const session = await res.json();
+
+            if (session.ended_at) {
+                navigate('/workouts', { replace: true })
+                return
+            }
+
             setWorkoutId(session.workout_id);
 
             const wRes = await fetch(`http://127.0.0.1:8000/workouts/${session.workout_id}`, {
@@ -151,6 +158,11 @@ export default function WorkoutSession() {
 
     useEffect(() => {
         if (!isResting || restTime <= 0) return
+
+        if (restTime === 10) speak('10 seconds left')
+        if (restTime === 3) speak('3')
+        if (restTime === 2) speak('2')
+        if (restTime === 1) speak('1. Go!')
 
         const interval = setInterval(() => {
             setRestTime(prev => prev - 1)
@@ -187,6 +199,8 @@ export default function WorkoutSession() {
 
     const handleCompleteSet = () => {
         const exId = currentExercise.id;
+        const completedCount = (completedSets[exId]?.length || 0) + 1
+        const totalSets = getTotalSets(currentExercise)
 
         setCompletedSets(prev => {
             const prevSets = prev[exId] || [];
@@ -199,6 +213,12 @@ export default function WorkoutSession() {
             ];
             return { ...prev, [exId]: updated };
         });
+
+        if (completedCount >= totalSets) {
+            speak(`Exercise complete! Great job!`)
+        } else {
+            speak(`Set ${completedCount} done. ${socketData.counter} reps. Rest now.`)
+        }
 
         setSocketData({ counter: 0, stage: "up", image: "" });
         setIsResting(true);
@@ -213,6 +233,7 @@ export default function WorkoutSession() {
 
     const handleFinish = async () => {
         setFinalTime(sessionTime)
+        speak('Workout complete! Amazing work!')
 
         const sets = [];
         Object.entries(completedSets).forEach(([exerciseId, setsArr]) => {
@@ -260,21 +281,36 @@ export default function WorkoutSession() {
     const handleStartCamera = () => {
         setVideoLoading(true)
         setIsReady(true);
+        speak(`Starting ${currentExercise.name}. Get ready!`)
     };
 
     const handleNextExercise = () => {
-        setCurrentExerciseIndex(prev =>
-            prev === workout.exercises.length - 1 ? 0 : prev + 1
-        );
+        setCurrentExerciseIndex(prev => {
+            const next = prev === workout.exercises.length - 1 ? 0 : prev + 1
+            speak(`Next exercise: ${workout.exercises[next].name}`)
+            return next
+        })
         setIsReady(false);
     };
 
     const handlePrewExercise = () => {
-        setCurrentExerciseIndex(prev =>
-            prev === 0 ? workout.exercises.length - 1 : prev - 1
-        );
+        setCurrentExerciseIndex(prev => {
+            const next = prev === 0 ? workout.exercises.length - 1 : prev - 1
+            speak(`${workout.exercises[next].name}`)
+            return next
+        })
         setIsReady(false);
     };
+
+    const speak = (text) => {
+        if (!window.speechSynthesis) return
+        window.speechSynthesis.cancel()
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = 'en-US'
+        utterance.rate = 0.9
+        utterance.pitch = 1
+        window.speechSynthesis.speak(utterance)
+    }
 
     if (!workout) return <p>Loading...</p>;
     if (!workout.exercises || workout.exercises.length === 0)
@@ -358,7 +394,7 @@ export default function WorkoutSession() {
                                 alt={currentExercise.name}
                                 className="video-stream-image"
                             />
-                            <div className="counter-badge">{socketData.counter}</div>
+                            {/* <div className="counter-badge">{socketData.counter}</div> */}
                         </div>
                     )}
                     <div className="ex-selector" style={{ backgroundColor: 'white' }}>

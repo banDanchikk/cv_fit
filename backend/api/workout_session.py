@@ -62,6 +62,31 @@ def finish_session(session_id: int, data: SessionFinish, user=Depends(get_curren
                 [(session_id, s.exercise_id, s.set_number, s.reps, s.weight) for s in data.sets]
             )
 
+            from collections import defaultdict
+            exercise_sets = defaultdict(list)
+            for s in data.sets:
+                exercise_sets[s.exercise_id].append(s)
+
+            for exercise_id, sets in exercise_sets.items():
+                total_reps = sum(s.reps for s in sets)
+                best_weight = max(s.weight for s in sets)
+
+                one_rep_max = max(
+                    s.weight * (1 + s.reps / 30)
+                    for s in sets if s.reps > 0
+                )
+
+                cursor.execute("""
+                    INSERT INTO exercise_progress 
+                        (user_id, exercise_id, best_weight, total_reps, last_trained_at, one_rep_max)
+                    VALUES (%s, %s, %s, %s, NOW(), %s)
+                    ON DUPLICATE KEY UPDATE
+                        best_weight = GREATEST(best_weight, VALUES(best_weight)),
+                        total_reps = total_reps + VALUES(total_reps),
+                        last_trained_at = NOW(),
+                        one_rep_max = GREATEST(one_rep_max, VALUES(one_rep_max))
+                """, (user["user_id"], exercise_id, best_weight, total_reps, round(one_rep_max, 1)))
+
         cursor.execute(
             "UPDATE workout_sessions SET ended_at = %s WHERE id = %s",
             (data.ended_at, session_id)

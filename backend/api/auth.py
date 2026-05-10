@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from mySQL_connect import get_cursor
+from mySQL_connect import get_db
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import bcrypt
 import jwt
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 SECRET_KEY = "your-secret-key-change-this"
 ALGORITHM = "HS256"
@@ -24,6 +27,11 @@ class LoginData(BaseModel):
 class UserUpdate(BaseModel):
     username: str
     email: str
+    height: float = None
+    weight: float = None
+
+class GoogleAuth(BaseModel):
+    token: str
 
 def create_token(user_id: int, username: str):
     payload = {
@@ -41,6 +49,40 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+    
+@router.post("/google")
+def google_login(data: GoogleAuth):
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        idinfo = id_token.verify_firebase_token(
+            data.token,
+            google_requests.Request(),
+            audience=None
+        )
+
+        email = idinfo['email']
+        username = idinfo.get('name', email.split('@')[0])
+
+        cursor.execute("SELECT id, username FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+
+        if not user:
+            cursor.execute(
+                "INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)",
+                (username, email, '')
+            )
+            conn.commit()
+            user_id = cursor.lastrowid
+        else:
+            user_id = user['id']
+            username = user['username']
+
+        token = create_token(user_id, username)
+        return {"token": token, "user_id": user_id, "username": username}
+    finally:
+        cursor.close()
+        conn.close()
 
 @router.post("/register")
 def register(data: RegisterData):
@@ -83,10 +125,7 @@ def login(data: LoginData):
 @router.get("/me")
 def get_me(user=Depends(get_current_user)):
     mycursor, mydb = get_cursor()
-    mycursor.execute(
-        "SELECT id, username, email FROM users WHERE id = %s",
-        (user["user_id"],)
-    )
+    mycursor.execute("SELECT id, username, email, height, weight FROM users WHERE id=%s", (user["user_id"],))
     row = mycursor.fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
@@ -95,9 +134,15 @@ def get_me(user=Depends(get_current_user)):
 
 @router.put("/me")
 def update_me(data: UserUpdate, user=Depends(get_current_user)):
-    mycursor, mydb = get_cursor()
-    mycursor.execute(
-        "UPDATE users SET username = %s, email = %s WHERE id = %s",
-        (data.username, data.email, user["user_id"])
-    )
-    return {"username": data.username, "email": data.email}
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "UPDATE users SET username=%s, email=%s, height=%s, weight=%s WHERE id=%s",
+            (data.username, data.email, data.height, data.weight, user["user_id"])
+        )
+        conn.commit()
+        return {"username": data.username, "email": data.email, "height": data.height, "weight": data.weight}
+    finally:
+        cursor.close()
+        conn.close()

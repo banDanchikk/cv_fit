@@ -50,17 +50,15 @@ EXERCISES = {
 async def workout_websocket(websocket: WebSocket, exercise_name: str):
     await websocket.accept()
     
-    # Ініціалізуємо камеру всередині сокета
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        await websocket.close(code=1011) # Помилка сервера
+        await websocket.close(code=1011) 
         return
 
-    # Отримуємо клас вправи
     exercise_class = EXERCISES.get(exercise_name)
     if not exercise_class:
         cap.release()
-        await websocket.close(code=1003) # Неправильні дані
+        await websocket.close(code=1003) 
         return
         
     exercise = exercise_class()
@@ -71,7 +69,6 @@ async def workout_websocket(websocket: WebSocket, exercise_name: str):
             if not ret:
                 break
 
-            # 1. Обробка кадру
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = detector.process(rgb)
 
@@ -80,11 +77,9 @@ async def workout_websocket(websocket: WebSocket, exercise_name: str):
                 landmarks = results.pose_landmarks.landmark
                 draw_skeleton(frame, results.pose_landmarks)
                 
-                # Рахуємо повтори
                 counter, stage = exercise.process(landmarks)
                 draw_counter(frame, counter, stage)
 
-            # 2. Кодуємо кадр у Base64 (щоб передати текстом через JSON)
             _, buffer = cv2.imencode(".jpg", frame)
             jpg_as_text = base64.b64encode(buffer).decode("utf-8")
 

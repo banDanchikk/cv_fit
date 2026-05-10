@@ -15,10 +15,24 @@ export default function UserPage() {
     const { user: authUser, logout, login } = useAuth()
     const token = localStorage.getItem('token')
     const [editing, setEditing] = useState(false)
-    const [formData, setFormData] = useState({ username: '', email: '' })
+    const [formData, setFormData] = useState({ username: '', email: '', height: '', weight: '' })
     const [stats, setStats] = useState(null)
     const [chartMode, setChartMode] = useState('duration')
     const [currentDate, setCurrentDate] = useState(new Date())
+
+    const bmi = authUser?.height && authUser?.weight
+        ? (authUser.weight / ((authUser.height / 100) ** 2)).toFixed(1)
+        : null
+
+    const getBmiLabel = (bmi) => {
+        if (!bmi) return null
+        if (bmi < 18.5) return { label: 'Underweight', color: '#3b82f6' }
+        if (bmi < 25) return { label: 'Normal', color: '#22c55e' }
+        if (bmi < 30) return { label: 'Overweight', color: '#f59e0b' }
+        return { label: 'Obese', color: '#ef4444' }
+    }
+
+    const bmiInfo = getBmiLabel(bmi)
 
     const AVATAR_COLORS = [
         '#2563eb', '#7c3aed', '#db2777', '#ea580c',
@@ -35,7 +49,12 @@ export default function UserPage() {
 
     useEffect(() => {
         if (authUser) {
-            setFormData({ username: authUser.username, email: authUser.email })
+            setFormData({
+                username: authUser.username || '',
+                email: authUser.email || '',
+                height: authUser.height || '',
+                weight: authUser.weight || ''
+            })
         }
     }, [authUser])
 
@@ -94,17 +113,15 @@ export default function UserPage() {
         const token = localStorage.getItem('token')
         const res = await fetch('http://127.0.0.1:8000/auth/me', {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(formData)
         })
 
         if (res.ok) {
             login(token, { ...authUser, ...formData })
+            setEditing(false)
         }
-        setEditing(false)
+
     }
 
     return (
@@ -113,16 +130,33 @@ export default function UserPage() {
             <div className="user-page">
 
                 <div className="user-card">
-                    <div
-                        className="user-avatar"
-                        style={{ background: getUserColor(authUser?.username) }}
-                    >
+                    <div className="user-avatar" style={{ background: getUserColor(authUser?.username) }}>
                         {authUser?.username?.[0]?.toUpperCase()}
                     </div>
 
                     <div className="user-info">
-                        <h2>{authUser?.username}</h2>
-                        <p>{authUser?.email}</p>
+                        <div className='user-naming'>
+                            <h2>{authUser?.username}</h2>
+                            <p>{authUser?.email}</p>
+                        </div>
+
+                        <div className="user-body-stats">
+                            <div className="body-stat">
+                                <span className="body-stat-value">{authUser?.height ? `${authUser.height} cm` : '—'}</span>
+                                <span className="body-stat-label">Height</span>
+                            </div>
+                            <div className="body-stat">
+                                <span className="body-stat-value">{authUser?.weight ? `${authUser.weight} kg` : '—'}</span>
+                                <span className="body-stat-label">Weight</span>
+                            </div>
+                            {bmi && (
+                                <div className="body-stat">
+                                    <span className="body-stat-value" style={{ color: bmiInfo.color }}>{bmi}</span>
+                                    <span className="body-stat-label">BMI</span>
+                                    <span className="bmi-label" style={{ background: bmiInfo.color }}>{bmiInfo.label}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="user-card-actions">
@@ -230,23 +264,35 @@ export default function UserPage() {
                 <div className="user-edit-form">
                     <div className="input-field">
                         <label>Username</label>
-                        <input
-                            value={formData.username}
-                            onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
-                            placeholder="Username"
-                        />
+                        <input value={formData.username} onChange={e => setFormData(p => ({ ...p, username: e.target.value }))} />
                     </div>
                     <div className="input-field">
                         <label>Email</label>
-                        <input
-                            value={formData.email}
-                            onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
-                            placeholder="Email"
-                        />
+                        <input value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div className="input-field">
+                            <label>Height (cm)</label>
+                            <input
+                                type="number"
+                                value={formData.height || ''}
+                                onChange={e => setFormData(p => ({ ...p, height: e.target.value }))}
+                                placeholder="175"
+                            />
+                        </div>
+                        <div className="input-field">
+                            <label>Weight (kg)</label>
+                            <input
+                                type="number"
+                                value={formData.weight || ''}
+                                onChange={e => setFormData(p => ({ ...p, weight: e.target.value }))}
+                                placeholder="70"
+                            />
+                        </div>
                     </div>
                     <div className="user-edit-actions">
                         <button className="main-btn" onClick={handleSave}>Save</button>
-                        <button className="outline-btn" onClick={() => setEditing(false)} style={{ marginTop: '8px', fontWeight: 'bold' }}>Cancel</button>
+                        <button className="outline-btn" onClick={() => setEditing(false)}>Cancel</button>
                     </div>
                 </div>
             </Modal>
