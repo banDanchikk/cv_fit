@@ -23,7 +23,12 @@ jobs:
         run: |
           cd backend
           python -m pip install --upgrade pip
-          sed -i '/win32/d' requirements.txt
+          
+          # Видаляємо всі згадки про проблемні Windows-пакети (регістронезалежно)
+          sed -i '/[wW][iI][nN]32/d' requirements.txt
+          sed -i '/[pP][yY][pP][iI][wW][iI][nN]32/d' requirements.txt
+          sed -i '/[pP][yY][tT][tT][sS][xX]3/d' requirements.txt
+          
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
 
@@ -52,4 +57,4 @@ jobs:
       - name: Run tests
         run: |
           cd frontend
-          npm test
+          npm run test  # Змінено на 'npm run test', якщо у вас налаштовано скрипт у package.json
