@@ -42,7 +42,7 @@ jobs:
               lines = f.readlines()
           
           # Фільтруємо пакети (прибираємо Windows-специфічний софт)
-          keywords = ['win32', 'pypiwin32', 'pyttsx3']
+          keywords = ['win32', 'pypiwin32', 'pyttsx3', 'pyaudio']
           clean_lines = [l for l in lines if not any(kw in l.lower() for kw in keywords)]
           
           # Записуємо назад у СТАНДАРТНОМУ UTF-8 без BOM, щоб pip на Linux не панікував
@@ -56,7 +56,7 @@ jobs:
           
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
-          
+
       - name: Run tests with coverage
         run: |
           cd backend
