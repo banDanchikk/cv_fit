@@ -40,7 +40,7 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           
-          # Очищення від Windows-пакетів (БЕЗ редагування mySQL_connect.py)
+          # Очищення requirements.txt від Windows-пакетів
           python -c "
           import os
           
@@ -73,40 +73,32 @@ jobs:
           with open('requirements.txt', 'w', encoding='utf-8') as f:
               f.writelines(clean_lines)
               
-          # БЕЗПЕЧНИЙ ФІКС БАЗИ ДАНИХ ЧЕРЕЗ CONFTEST
+          # ТОЧКОВИЙ МОКІНГ ПІДКЛЮЧЕННЯ ЧЕРЕЗ CONFTEST
           if os.path.exists('tests/conftest.py'):
               with open('tests/conftest.py', 'r', encoding='utf-8') as f:
                   conftest_content = f.read()
               
-              # Цей код виконається ДО імпорту main і примусово підмінить словник в модулі мокінгом
+              # Цей код перевизначає аргументи функції коннекту для mysql-connector в пам'яті
               mock_db_code = (
-                  'import sys\n'
                   'import os\n'
                   'import mysql.connector\n'
-                  '# Створюємо фейковий модуль або перевизначаємо змінні в системному кеші модулів\n'
-                  'class MockMySQLConnect:\n'
-                  '    config = {\n'
+                  '# Перехоплюємо оригінальний метод коннекту\n'
+                  'orig_connect = mysql.connector.connect\n'
+                  'def mock_connect(*args, **kwargs):\n'
+                  '    # Примусово підставляємо змінні нашого тестового контейнера\n'
+                  '    kwargs.update({\n'
                   '        \"host\": os.getenv(\"DB_HOST\", \"127.0.0.1\"),\n'
                   '        \"user\": os.getenv(\"DB_USER\", \"test_user\"),\n'
                   '        \"password\": os.getenv(\"DB_PASSWORD\", \"test_password\"),\n'
                   '        \"database\": os.getenv(\"DB_NAME\", \"cvfit_db\"),\n'
                   '        \"port\": 3306\n'
-                  '    }\n'
-                  'sys.modules[\"mySQL_connect\"] = MockMySQLConnect\n'
-                  '# Додатково підміняємо функцію connect, якщо модуль вже десь імпортувався\n'
-                  'orig_connect = mysql.connector.connect\n'
-                  'def mock_connect(*args, **kwargs):\n'
-                  '    kwargs.update({\n'
-                  '        \"host\": \"127.0.0.1\",\n'
-                  '        \"user\": \"test_user\",\n'
-                  '        \"password\": \"test_password\",\n'
-                  '        \"database\": \"cvfit_db\",\n'
-                  '        \"port\": 3306\n'
                   '    })\n'
                   '    return orig_connect(**kwargs)\n'
+                  '# Замінюємо стандартний метод на наш мок\n'
                   'mysql.connector.connect = mock_connect\n'
               )
               
+              # Перезаписуємо з додаванням нашого фіксу строго на початок файлу
               with open('tests/conftest.py', 'w', encoding='utf-8') as f:
                   f.write(mock_db_code + '\n' + conftest_content)
           "
