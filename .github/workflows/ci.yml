@@ -40,7 +40,7 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           
-          # Очищення від Windows-пакетів + динамічна підміна конфігу бази даних
+          # Очищення від Windows-пакетів (БЕЗ редагування mySQL_connect.py)
           python -c "
           import os
           
@@ -73,34 +73,47 @@ jobs:
           with open('requirements.txt', 'w', encoding='utf-8') as f:
               f.writelines(clean_lines)
               
-          # МОДИФІКАЦІЯ SQL КОНФІГУ ДЛЯ ТЕСТІВ
-          # Якщо у вашому файлі mySQL_connect.py є словник 'config', ми змусимо його читати змінні оточення
-          if os.path.exists('mySQL_connect.py'):
-              with open('mySQL_connect.py', 'r', encoding='utf-8') as f:
-                  content = f.read()
+          # БЕЗПЕЧНИЙ ФІКС БАЗИ ДАНИХ ЧЕРЕЗ CONFTEST
+          if os.path.exists('tests/conftest.py'):
+              with open('tests/conftest.py', 'r', encoding='utf-8') as f:
+                  conftest_content = f.read()
               
-              # Впроваджуємо динамічний фікс на початок файлу
-              fix_code = (
+              # Цей код виконається ДО імпорту main і примусово підмінить словник в модулі мокінгом
+              mock_db_code = (
+                  'import sys\n'
                   'import os\n'
-                  '# Перевизначаємо конфіг для середовища GitHub Actions\n'
-                  'config = {\n'
-                  '    \"host\": os.getenv(\"DB_HOST\", \"127.0.0.1\"),\n'
-                  '    \"user\": os.getenv(\"DB_USER\", \"test_user\"),\n'
-                  '    \"password\": os.getenv(\"DB_PASSWORD\", \"test_password\"),\n'
-                  '    \"database\": os.getenv(\"DB_NAME\", \"cvfit_db\"),\n'
-                  '    \"port\": 3306\n'
-                  '}\n'
+                  'import mysql.connector\n'
+                  '# Створюємо фейковий модуль або перевизначаємо змінні в системному кеші модулів\n'
+                  'class MockMySQLConnect:\n'
+                  '    config = {\n'
+                  '        \"host\": os.getenv(\"DB_HOST\", \"127.0.0.1\"),\n'
+                  '        \"user\": os.getenv(\"DB_USER\", \"test_user\"),\n'
+                  '        \"password\": os.getenv(\"DB_PASSWORD\", \"test_password\"),\n'
+                  '        \"database\": os.getenv(\"DB_NAME\", \"cvfit_db\"),\n'
+                  '        \"port\": 3306\n'
+                  '    }\n'
+                  'sys.modules[\"mySQL_connect\"] = MockMySQLConnect\n'
+                  '# Додатково підміняємо функцію connect, якщо модуль вже десь імпортувався\n'
+                  'orig_connect = mysql.connector.connect\n'
+                  'def mock_connect(*args, **kwargs):\n'
+                  '    kwargs.update({\n'
+                  '        \"host\": \"127.0.0.1\",\n'
+                  '        \"user\": \"test_user\",\n'
+                  '        \"password\": \"test_password\",\n'
+                  '        \"database\": \"cvfit_db\",\n'
+                  '        \"port\": 3306\n'
+                  '    })\n'
+                  '    return orig_connect(**kwargs)\n'
+                  'mysql.connector.connect = mock_connect\n'
               )
               
-              # Записуємо фікс і старий контент (але старий config затреться або ми його підмінимо)
-              # Для безпеки просто додамо цей блок в кінець або замінимо ініціалізацію mydb
-              with open('mySQL_connect.py', 'w', encoding='utf-8') as f:
-                  f.write(fix_code + '\n' + content.replace('mydb = mysql.connector.connect(**config)', '# заміна\nmydb = mysql.connector.connect(**config)'))
+              with open('tests/conftest.py', 'w', encoding='utf-8') as f:
+                  f.write(mock_db_code + '\n' + conftest_content)
           "
           
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
-
+          
       - name: Run tests with coverage
         env:
           DB_HOST: 127.0.0.1
@@ -110,7 +123,7 @@ jobs:
         run: |
           cd backend
           pytest tests/ --cov=api --cov-report=term-missing
-          
+
   frontend-tests:
     runs-on: ubuntu-latest
     steps:
