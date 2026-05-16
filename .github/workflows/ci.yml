@@ -24,27 +24,39 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           
-          # Надійне очищення requirements.txt за допомогою Python-скрипту
+          # Універсальне очищення з підтримкою кодувань UTF-16 та UTF-8
           python -c "
-          with open('requirements.txt', 'r', encoding='utf-8') as f:
+          import os
+          
+          # Визначаємо правильне кодування файлу
+          encoding = 'utf-8'
+          if os.path.exists('requirements.txt'):
+              with open('requirements.txt', 'rb') as f:
+                  raw = f.read(2)
+                  if raw == b'\xff\xfe' or raw == b'\xfe\xff':
+                      encoding = 'utf-16'
+          
+          print(f'Зчитано файл у кодуванні: {encoding}')
+          
+          with open('requirements.txt', 'r', encoding=encoding) as f:
               lines = f.readlines()
           
-          # Залишаємо лише ті рядки, де немає згадок про win32, pypiwin32 або pyttsx3
+          # Фільтруємо пакети (прибираємо Windows-специфічний софт)
           keywords = ['win32', 'pypiwin32', 'pyttsx3']
           clean_lines = [l for l in lines if not any(kw in l.lower() for kw in keywords)]
           
+          # Записуємо назад у СТАНДАРТНОМУ UTF-8 без BOM, щоб pip на Linux не панікував
           with open('requirements.txt', 'w', encoding='utf-8') as f:
               f.writelines(clean_lines)
           "
           
-          # Виводимо результат у лог для перевірки
           echo "=== Очищений requirements.txt ==="
           cat requirements.txt
           echo "================================="
           
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
-
+          
       - name: Run tests with coverage
         run: |
           cd backend
