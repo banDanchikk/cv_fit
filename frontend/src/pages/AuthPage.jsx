@@ -4,7 +4,6 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa"
 import { FcGoogle } from "react-icons/fc"
 import { useAuth } from '../AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { signInWithGoogle } from '../firebase'
 
 export default function AuthPage() {
   const navigate = useNavigate()
