@@ -9,6 +9,22 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+
+    # ПІДНІМАЄМО ТИМЧАСОВУ БАЗУ ДАНИХ MYSQL ДЛЯ ТЕСТІВ
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root  # Вкажіть пароль, який очікує ваш config
+          MYSQL_DATABASE: cvfit_db   # Вкажіть назву вашої БД
+        ports:
+          - 3306:3306
+        # Чекаємо, поки MySQL повністю запуститься, перш ніж переходити до кроків
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
     
     steps:
       - name: Checkout code
@@ -24,11 +40,9 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           
-          # Універсальне очищення з підтримкою кодувань UTF-16 та UTF-8
+          # Універсальне очищення залежностей
           python -c "
           import os
-          
-          # Визначаємо правильне кодування файлу
           encoding = 'utf-8'
           if os.path.exists('requirements.txt'):
               with open('requirements.txt', 'rb') as f:
@@ -36,35 +50,46 @@ jobs:
                   if raw == b'\xff\xfe' or raw == b'\xfe\xff':
                       encoding = 'utf-16'
           
-          print(f'Зчитано файл у кодуванні: {encoding}')
-          
           with open('requirements.txt', 'r', encoding=encoding) as f:
               lines = f.readlines()
           
-          # Фільтруємо пакети (прибираємо Windows-специфічний софт)
           keywords = ['win32', 'pypiwin32', 'pyttsx3', 'pyaudio']
-          clean_lines = [l for l in lines if not any(kw in l.lower() for kw in keywords)]
+          clean_lines = []
+          for line in lines:
+              if any(kw in line.lower() for kw in keywords):
+                  continue
+              if 'grpcio-status' in line.lower():
+                  clean_lines.append('grpcio-status>=1.62.0,<1.63.0\n')
+                  continue
+              if 'protobuf' in line.lower():
+                  clean_lines.append('protobuf==4.25.3\n')
+                  continue
+              clean_lines.append(line)
+              
+          if not any('protobuf' in l.lower() for l in clean_lines):
+              clean_lines.append('protobuf==4.25.3\n')
           
-          # Записуємо назад у СТАНДАРТНОМУ UTF-8 без BOM, щоб pip на Linux не панікував
           with open('requirements.txt', 'w', encoding='utf-8') as f:
               f.writelines(clean_lines)
           "
-          
-          echo "=== Очищений requirements.txt ==="
-          cat requirements.txt
-          echo "================================="
           
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
 
       - name: Run tests with coverage
+        env:
+          # Якщо конфіг підключення у вашому коді використовує змінні оточення (os.getenv),
+          # ви можете перевизначити їх тут, щоб вони збігалися з параметрами сервісу вище:
+          DB_HOST: 127.0.0.1
+          DB_USER: root
+          DB_PASSWORD: root
+          DB_NAME: cvfit_db
         run: |
           cd backend
           pytest tests/ --cov=api --cov-report=term-missing
 
   frontend-tests:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
