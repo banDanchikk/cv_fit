@@ -10,16 +10,16 @@ jobs:
   backend-tests:
     runs-on: ubuntu-latest
 
-    # ПІДНІМАЄМО ТИМЧАСОВУ БАЗУ ДАНИХ MYSQL ДЛЯ ТЕСТІВ
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root  # Вкажіть пароль, який очікує ваш config
-          MYSQL_DATABASE: cvfit_db   # Вкажіть назву вашої БД
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: cvfit_db
+          MYSQL_USER: test_user        # Створюємо окремого користувача
+          MYSQL_PASSWORD: test_password # Пароль для нього
         ports:
           - 3306:3306
-        # Чекаємо, поки MySQL повністю запуститься, перш ніж переходити до кроків
         options: >-
           --health-cmd="mysqladmin ping"
           --health-interval=10s
@@ -40,9 +40,10 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           
-          # Універсальне очищення залежностей
+          # Очищення від Windows-пакетів + динамічна підміна конфігу бази даних
           python -c "
           import os
+          
           encoding = 'utf-8'
           if os.path.exists('requirements.txt'):
               with open('requirements.txt', 'rb') as f:
@@ -71,6 +72,30 @@ jobs:
           
           with open('requirements.txt', 'w', encoding='utf-8') as f:
               f.writelines(clean_lines)
+              
+          # МОДИФІКАЦІЯ SQL КОНФІГУ ДЛЯ ТЕСТІВ
+          # Якщо у вашому файлі mySQL_connect.py є словник 'config', ми змусимо його читати змінні оточення
+          if os.path.exists('mySQL_connect.py'):
+              with open('mySQL_connect.py', 'r', encoding='utf-8') as f:
+                  content = f.read()
+              
+              # Впроваджуємо динамічний фікс на початок файлу
+              fix_code = (
+                  'import os\n'
+                  '# Перевизначаємо конфіг для середовища GitHub Actions\n'
+                  'config = {\n'
+                  '    \"host\": os.getenv(\"DB_HOST\", \"127.0.0.1\"),\n'
+                  '    \"user\": os.getenv(\"DB_USER\", \"test_user\"),\n'
+                  '    \"password\": os.getenv(\"DB_PASSWORD\", \"test_password\"),\n'
+                  '    \"database\": os.getenv(\"DB_NAME\", \"cvfit_db\"),\n'
+                  '    \"port\": 3306\n'
+                  '}\n'
+              )
+              
+              # Записуємо фікс і старий контент (але старий config затреться або ми його підмінимо)
+              # Для безпеки просто додамо цей блок в кінець або замінимо ініціалізацію mydb
+              with open('mySQL_connect.py', 'w', encoding='utf-8') as f:
+                  f.write(fix_code + '\n' + content.replace('mydb = mysql.connector.connect(**config)', '# заміна\nmydb = mysql.connector.connect(**config)'))
           "
           
           pip install -r requirements.txt
@@ -78,16 +103,14 @@ jobs:
 
       - name: Run tests with coverage
         env:
-          # Якщо конфіг підключення у вашому коді використовує змінні оточення (os.getenv),
-          # ви можете перевизначити їх тут, щоб вони збігалися з параметрами сервісу вище:
           DB_HOST: 127.0.0.1
-          DB_USER: root
-          DB_PASSWORD: root
+          DB_USER: test_user
+          DB_PASSWORD: test_password
           DB_NAME: cvfit_db
         run: |
           cd backend
           pytest tests/ --cov=api --cov-report=term-missing
-
+          
   frontend-tests:
     runs-on: ubuntu-latest
     steps:
