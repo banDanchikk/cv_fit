@@ -24,10 +24,23 @@ jobs:
           cd backend
           python -m pip install --upgrade pip
           
-          # Видаляємо всі згадки про проблемні Windows-пакети (регістронезалежно)
-          sed -i '/[wW][iI][nN]32/d' requirements.txt
-          sed -i '/[pP][yY][pP][iI][wW][iI][nN]32/d' requirements.txt
-          sed -i '/[pP][yY][tT][tT][sS][xX]3/d' requirements.txt
+          # Надійне очищення requirements.txt за допомогою Python-скрипту
+          python -c "
+          with open('requirements.txt', 'r', encoding='utf-8') as f:
+              lines = f.readlines()
+          
+          # Залишаємо лише ті рядки, де немає згадок про win32, pypiwin32 або pyttsx3
+          keywords = ['win32', 'pypiwin32', 'pyttsx3']
+          clean_lines = [l for l in lines if not any(kw in l.lower() for kw in keywords)]
+          
+          with open('requirements.txt', 'w', encoding='utf-8') as f:
+              f.writelines(clean_lines)
+          "
+          
+          # Виводимо результат у лог для перевірки
+          echo "=== Очищений requirements.txt ==="
+          cat requirements.txt
+          echo "================================="
           
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
@@ -57,4 +70,4 @@ jobs:
       - name: Run tests
         run: |
           cd frontend
-          npm run test  # Змінено на 'npm run test', якщо у вас налаштовано скрипт у package.json
+          npm run test
