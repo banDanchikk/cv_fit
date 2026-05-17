@@ -1,16 +1,20 @@
+
+
+
 import mysql.connector
+import os
 
 config = {
-    "host": "localhost",
-    "user": "root",
-    "password": "3Hi59mt1",
-    "database": "cvfit",
+    "host": os.getenv("DB_HOST", "localhost"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", "3Hi59mt1"),
+    "database": os.getenv("DB_NAME", "cvfit"),
     "autocommit": False,
     "connection_timeout": 30
 }
 
-mydb = mysql.connector.connect(**config)
-mycursor = mydb.cursor()
+def get_db():
+    return mysql.connector.connect(**config)
 
 def get_cursor():
     global mydb, mycursor
@@ -22,5 +26,5 @@ def get_cursor():
         mycursor = mydb.cursor()
     return mycursor, mydb
 
-def get_db():
-    return mysql.connector.connect(**config)
+mydb = mysql.connector.connect(**config)
+mycursor = mydb.cursor()

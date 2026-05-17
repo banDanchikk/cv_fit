@@ -16,8 +16,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root_password
           MYSQL_DATABASE: cvfit_db
-          MYSQL_USER: test_user        # Створюємо окремого користувача
-          MYSQL_PASSWORD: test_password # Пароль для нього
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
         ports:
           - 3306:3306
         options: >-
@@ -25,7 +25,7 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -39,73 +39,36 @@ jobs:
         run: |
           cd backend
           python -m pip install --upgrade pip
-          
-          # Очищення requirements.txt від Windows-пакетів
           python -c "
-          import os
-          
-          encoding = 'utf-8'
-          if os.path.exists('requirements.txt'):
-              with open('requirements.txt', 'rb') as f:
-                  raw = f.read(2)
-                  if raw == b'\xff\xfe' or raw == b'\xfe\xff':
-                      encoding = 'utf-16'
-          
+          with open('requirements.txt', 'rb') as f:
+              raw = f.read()
+          encoding = 'utf-16' if raw[:2] in (b'\xff\xfe', b'\xfe\xff') else 'utf-8'
           with open('requirements.txt', 'r', encoding=encoding) as f:
               lines = f.readlines()
-          
-          keywords = ['win32', 'pypiwin32', 'pyttsx3', 'pyaudio']
-          clean_lines = []
+          skip = ['win32', 'pypiwin32', 'pyttsx3', 'pyaudio']
+          clean = []
           for line in lines:
-              if any(kw in line.lower() for kw in keywords):
+              if any(k in line.lower() for k in skip):
                   continue
               if 'grpcio-status' in line.lower():
-                  clean_lines.append('grpcio-status>=1.62.0,<1.63.0\n')
+                  clean.append('grpcio-status>=1.62.0,<1.63.0\n')
                   continue
               if 'protobuf' in line.lower():
-                  clean_lines.append('protobuf==4.25.3\n')
+                  clean.append('protobuf==4.25.3\n')
                   continue
-              clean_lines.append(line)
-              
-          if not any('protobuf' in l.lower() for l in clean_lines):
-              clean_lines.append('protobuf==4.25.3\n')
-          
+              clean.append(line)
+          if not any('protobuf' in l.lower() for l in clean):
+              clean.append('protobuf==4.25.3\n')
           with open('requirements.txt', 'w', encoding='utf-8') as f:
-              f.writelines(clean_lines)
-              
-          # ТОЧКОВИЙ МОКІНГ ПІДКЛЮЧЕННЯ ЧЕРЕЗ CONFTEST
-          if os.path.exists('tests/conftest.py'):
-              with open('tests/conftest.py', 'r', encoding='utf-8') as f:
-                  conftest_content = f.read()
-              
-              # Цей код перевизначає аргументи функції коннекту для mysql-connector в пам'яті
-              mock_db_code = (
-                  'import os\n'
-                  'import mysql.connector\n'
-                  '# Перехоплюємо оригінальний метод коннекту\n'
-                  'orig_connect = mysql.connector.connect\n'
-                  'def mock_connect(*args, **kwargs):\n'
-                  '    # Примусово підставляємо змінні нашого тестового контейнера\n'
-                  '    kwargs.update({\n'
-                  '        \"host\": os.getenv(\"DB_HOST\", \"127.0.0.1\"),\n'
-                  '        \"user\": os.getenv(\"DB_USER\", \"test_user\"),\n'
-                  '        \"password\": os.getenv(\"DB_PASSWORD\", \"test_password\"),\n'
-                  '        \"database\": os.getenv(\"DB_NAME\", \"cvfit_db\"),\n'
-                  '        \"port\": 3306\n'
-                  '    })\n'
-                  '    return orig_connect(**kwargs)\n'
-                  '# Замінюємо стандартний метод на наш мок\n'
-                  'mysql.connector.connect = mock_connect\n'
-              )
-              
-              # Перезаписуємо з додаванням нашого фіксу строго на початок файлу
-              with open('tests/conftest.py', 'w', encoding='utf-8') as f:
-                  f.write(mock_db_code + '\n' + conftest_content)
+              f.writelines(clean)
           "
-          
           pip install -r requirements.txt
           pip install pytest pytest-cov httpx
-          
+
+      - name: Create database schema
+        run: |
+          mysql -h 127.0.0.1 -u test_user -ptest_password cvfit_db < backend/tests/schema.sql
+
       - name: Run tests with coverage
         env:
           DB_HOST: 127.0.0.1
@@ -118,6 +81,7 @@ jobs:
 
   frontend-tests:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
