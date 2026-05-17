@@ -72,3 +72,6 @@ CREATE TABLE IF NOT EXISTS exercise_progress (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (exercise_id) REFERENCES exercises(id)
 );
+
+INSERT INTO exercises (name, level, instructions, muscles, equipments, gif_url)
+VALUES ('Push Up', 'beginner', 'Do a push up.', 'chest', 'none', 'https://example.com/pushup.gif');
